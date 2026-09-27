@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  aazhi-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aazhi-ocean-platform
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - ENVIRONMENT=production
+      - ALLOWED_ORIGINS=*
+    volumes:
+      - ./data:/app/data
+      - ./tiles:/app/tiles
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

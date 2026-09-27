@@ -1,0 +1,14 @@
+{
+  "temperature": {
+    "min": 2.0,
+    "max": 31.0,
+    "unit": "\u00b0C",
+    "cmap_name": "thermal"
+  },
+  "salinity": {
+    "min": 31.5,
+    "max": 37.0,
+    "unit": "PSU",
+    "cmap_name": "haline"
+  }
+}
