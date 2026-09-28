@@ -18,6 +18,7 @@ build/
 # Large Data & Media Files (>50MB - Exceeds GitHub 100MB file limit)
 data/
 *.mp4
+!frontend/src/assets/hero_globe.mp4
 *.csv
 *.nc
 *.zarr

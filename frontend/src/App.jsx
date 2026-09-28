@@ -478,28 +478,28 @@ export default function App() {
       
       {/* ═════════════════════ TOP NAVIGATION BAR (REFINED LAYOUT & SPACING) ═════════════════════ */}
       <header className="sticky top-0 z-50 border-b border-cyan-500/20 bg-[#010915]/98 backdrop-blur-2xl shrink-0 shadow-[0_4px_32px_rgba(0,0,0,0.75)]">
-        <div className="flex items-center justify-between px-8 sm:px-10 lg:px-12 h-[64px] gap-6 lg:gap-10">
+        <div className="flex items-center justify-between px-3.5 sm:px-8 lg:px-12 h-[56px] sm:h-[64px] gap-2 sm:gap-6">
           
           {/* Brand Logo & Name (Left) */}
-          <div className="flex items-center gap-4 cursor-pointer group shrink-0" onClick={() => setActiveTab('home')}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-sky-500 to-blue-600 text-slate-950 shadow-[0_0_24px_rgba(6,182,212,0.5)] border border-cyan-300/40 group-hover:scale-105 transition-all duration-300">
-              <Waves className="w-5.5 h-5.5 stroke-[2.5]" />
+          <div className="flex items-center gap-2.5 sm:gap-4 cursor-pointer group shrink-0" onClick={() => setActiveTab('home')}>
+            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-br from-cyan-400 via-sky-500 to-blue-600 text-slate-950 shadow-[0_0_24px_rgba(6,182,212,0.5)] border border-cyan-300/40 group-hover:scale-105 transition-all duration-300">
+              <Waves className="w-5 h-5 sm:w-5.5 sm:h-5.5 stroke-[2.5]" />
             </div>
             <div>
-              <div className="flex items-center gap-2.5 leading-none">
-                <span className="text-lg font-black tracking-widest text-white font-['Outfit']">AAZHI</span>
-                <span className="text-[10px] font-extrabold tracking-[0.2em] text-cyan-300 bg-cyan-950/90 border border-cyan-400/35 px-2.5 py-1 rounded-full uppercase leading-none shadow-sm">
+              <div className="flex items-center gap-2 leading-none">
+                <span className="text-base sm:text-lg font-black tracking-widest text-white font-['Outfit']">AAZHI</span>
+                <span className="text-[9px] sm:text-[10px] font-extrabold tracking-[0.15em] text-cyan-300 bg-cyan-950/90 border border-cyan-400/35 px-2 py-0.5 rounded-full uppercase leading-none shadow-sm hidden md:inline-block">
                   OCEAN OBSERVATION PORTAL
                 </span>
               </div>
-              <div className="text-[11px] text-slate-400 mt-1 font-mono tracking-tight leading-none hidden sm:block">
+              <div className="text-[10px] sm:text-[11px] text-slate-400 mt-1 font-mono tracking-tight leading-none hidden lg:block">
                 Indian Ocean Hydrodynamics & Argo Float In-Situ Network
               </div>
             </div>
           </div>
 
-          {/* Center Navigation Tabs (Refined Spacing & Sizing) */}
-          <nav className="flex items-center gap-2 sm:gap-4 lg:gap-6 h-full">
+          {/* Desktop Navigation Tabs */}
+          <nav className="hidden md:flex items-center gap-2 sm:gap-4 lg:gap-6 h-full">
             {TABS.map((t) => {
               const Icon = t.icon;
               const isActive = activeTab === t.id;
@@ -507,29 +507,29 @@ export default function App() {
                 <button
                   key={t.id}
                   onClick={() => setActiveTab(t.id)}
-                  className={`relative h-full flex items-center gap-2.5 px-4 sm:px-6 lg:px-7 text-sm sm:text-[15px] font-semibold transition-all duration-200 cursor-pointer border-b-2 ${
+                  className={`relative h-full flex items-center gap-2 px-3 sm:px-5 lg:px-6 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer border-b-2 ${
                     isActive
                       ? 'text-cyan-300 border-cyan-400 bg-cyan-500/[0.1] font-bold shadow-[inset_0_-2px_10px_rgba(6,182,212,0.25)]'
                       : 'text-slate-400 border-transparent hover:text-slate-200 hover:bg-white/[0.04] hover:border-slate-700'
                   }`}
                 >
-                  <Icon className={`w-4.5 h-4.5 ${isActive ? 'text-cyan-400' : 'text-slate-500'}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-cyan-400' : 'text-slate-500'}`} />
                   <span className="tracking-wide">{t.label}</span>
                 </button>
               );
             })}
           </nav>
 
-          {/* Utility Controls (Right - Enlarged Search Bar & Controls) */}
-          <div className="flex items-center gap-3 shrink-0">
-            {/* Enlarged Search Button */}
+          {/* Utility Controls (Right) */}
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            {/* Search Button */}
             <button
               onClick={() => setIsSearchOpen(true)}
-              className="px-4 py-2 rounded-xl bg-slate-900/90 border border-cyan-500/30 text-slate-200 hover:text-white hover:border-cyan-400/60 transition cursor-pointer flex items-center gap-2.5 text-xs sm:text-sm font-mono shadow-md"
+              className="p-2 sm:px-4 sm:py-2 rounded-xl bg-slate-900/90 border border-cyan-500/30 text-slate-200 hover:text-white hover:border-cyan-400/60 transition cursor-pointer flex items-center gap-2 text-xs font-mono shadow-md"
               title="Search (Ctrl+K)"
             >
               <Search className="w-4 h-4 text-cyan-400 shrink-0" />
-              <span className="hidden md:inline font-sans text-slate-300">Search AAZHI...</span>
+              <span className="hidden md:inline font-sans text-slate-300">Search...</span>
               <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 border border-slate-700 font-bold ml-1">
                 Ctrl + K
               </kbd>
@@ -538,7 +538,7 @@ export default function App() {
             {/* Presentation Demo Mode */}
             <button
               onClick={() => setIsDemoModeActive(!isDemoModeActive)}
-              className={`px-3.5 py-2 rounded-xl border transition cursor-pointer flex items-center gap-2 text-xs sm:text-sm font-mono font-bold ${
+              className={`p-2 sm:px-3.5 sm:py-2 rounded-xl border transition cursor-pointer flex items-center gap-1.5 text-xs font-mono font-bold ${
                 isDemoModeActive
                   ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-[0_0_18px_rgba(245,158,11,0.55)]'
                   : 'bg-slate-900/90 border-cyan-500/20 text-amber-300 hover:border-amber-400/40'
@@ -546,25 +546,25 @@ export default function App() {
               title="Toggle Presentation Demo Mode"
             >
               <Tv className="w-4 h-4" />
-              <span className="hidden md:inline font-sans">Demo Mode</span>
+              <span className="hidden md:inline font-sans">Demo</span>
             </button>
 
             {/* Keyboard Shortcuts Drawer */}
             <button
               onClick={() => setIsKeybindsOpen(true)}
-              className="p-2.5 rounded-xl bg-slate-900/90 border border-cyan-500/20 text-slate-300 hover:text-white hover:border-cyan-400/40 transition cursor-pointer"
+              className="p-2 sm:p-2.5 rounded-xl bg-slate-900/90 border border-cyan-500/20 text-slate-300 hover:text-white hover:border-cyan-400/40 transition cursor-pointer hidden sm:block"
               title="Keyboard Shortcuts (?)"
             >
-              <Keyboard className="w-4.5 h-4.5 text-cyan-400" />
+              <Keyboard className="w-4 h-4 text-cyan-400" />
             </button>
 
             {/* Fullscreen */}
             <button
               onClick={toggleFullscreen}
-              className="p-2.5 rounded-xl bg-slate-900/90 border border-cyan-500/20 text-slate-300 hover:text-white hover:border-cyan-400/40 transition cursor-pointer"
+              className="p-2 sm:p-2.5 rounded-xl bg-slate-900/90 border border-cyan-500/20 text-slate-300 hover:text-white hover:border-cyan-400/40 transition cursor-pointer"
               title="Toggle Fullscreen"
             >
-              <Maximize2 className="w-4.5 h-4.5 text-cyan-400" />
+              <Maximize2 className="w-4 h-4 text-cyan-400" />
             </button>
           </div>
 
@@ -630,6 +630,28 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Sleek Mobile Bottom Navigation Bar (Visible only on mobile screens < 768px) */}
+      <nav className="flex md:hidden sticky bottom-0 left-0 right-0 z-40 bg-[#010915]/95 border-t border-cyan-500/20 backdrop-blur-xl h-14 items-center justify-around px-2 shrink-0 shadow-[0_-4px_24px_rgba(0,0,0,0.8)]">
+        {TABS.map((t) => {
+          const Icon = t.icon;
+          const isActive = activeTab === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              className={`flex flex-col items-center justify-center gap-1 px-3 py-1 text-[10px] font-mono font-bold transition-all cursor-pointer ${
+                isActive
+                  ? 'text-cyan-300 font-extrabold'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Icon className={`w-4 h-4 ${isActive ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]' : 'text-slate-500'}`} />
+              <span>{t.label.split(' ')[0]}</span>
+            </button>
+          );
+        })}
+      </nav>
 
       {/* Global Search Modal */}
       <GlobalSearchModal

@@ -89,6 +89,7 @@ export default function Viewer({
   const [showMetadataDrawer, setShowMetadataDrawer] = useState(false);
   const [isViewerFullscreen, setIsViewerFullscreen] = useState(false);
   const [displayMode, setDisplayMode] = useState('both');
+  const [mobileTab, setMobileTab] = useState('viewport'); // 'layers' | 'viewport' | 'telemetry'
 
   // Collapsible dataset groups state
   const [openGroups, setOpenGroups] = useState({
@@ -262,13 +263,52 @@ export default function Viewer({
   };
 
   return (
-    <div className={`grid h-[calc(100vh-56px)] w-full grid-cols-1 ${isViewerFullscreen ? 'lg:grid-cols-1 p-0' : 'lg:grid-cols-[320px_1fr_370px] xl:grid-cols-[340px_1fr_400px] p-4 sm:p-5 gap-5'} bg-[#020a18] text-slate-100 overflow-hidden select-none`}>
+    <div className="flex flex-col h-full w-full bg-[#020a18] text-slate-100 overflow-hidden select-none">
       
-      {/* ═══════════════════════════════════════════════════════════════════ */}
-      {/* 1. LEFT SIDEBAR: Redesigned Data Explorer & Layer Controls        */}
-      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* Mobile Segment Control Switcher Bar (Visible on screens < 1024px) */}
       {!isViewerFullscreen && (
-        <aside className="flex flex-col gap-5 rounded-2xl border border-cyan-500/15 bg-[#04112a]/95 p-5 shadow-[0_8px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl overflow-y-auto custom-scrollbar select-none">
+        <div className="flex lg:hidden items-center justify-center p-2 bg-[#010915] border-b border-cyan-500/20 shrink-0">
+          <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-cyan-500/30 text-xs font-mono font-bold w-full max-w-sm justify-between shadow-lg">
+            <button
+              onClick={() => setMobileTab('layers')}
+              className={`flex-1 py-1.5 rounded-lg transition text-center cursor-pointer flex items-center justify-center gap-1.5 ${
+                mobileTab === 'layers' ? 'bg-cyan-400 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Layers</span>
+            </button>
+
+            <button
+              onClick={() => setMobileTab('viewport')}
+              className={`flex-1 py-1.5 rounded-lg transition text-center cursor-pointer flex items-center justify-center gap-1.5 ${
+                mobileTab === 'viewport' ? 'bg-cyan-400 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Box className="w-3.5 h-3.5" />
+              <span>3D Scene</span>
+            </button>
+
+            <button
+              onClick={() => setMobileTab('telemetry')}
+              className={`flex-1 py-1.5 rounded-lg transition text-center cursor-pointer flex items-center justify-center gap-1.5 ${
+                mobileTab === 'telemetry' ? 'bg-cyan-400 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>Station</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className={`grid flex-1 w-full grid-cols-1 ${isViewerFullscreen ? 'lg:grid-cols-1 p-0' : 'lg:grid-cols-[300px_1fr_360px] xl:grid-cols-[340px_1fr_400px] p-2.5 sm:p-4 gap-3 sm:gap-4'} bg-[#020a18] text-slate-100 overflow-hidden select-none`}>
+        
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {/* 1. LEFT SIDEBAR: Redesigned Data Explorer & Layer Controls        */}
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {!isViewerFullscreen && (
+          <aside className={`${mobileTab === 'layers' ? 'flex' : 'hidden'} lg:flex flex-col gap-4 sm:gap-5 rounded-2xl border border-cyan-500/15 bg-[#04112a]/95 p-4 sm:p-5 shadow-[0_8px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl overflow-y-auto custom-scrollbar select-none h-full`}>
           
           {/* Header & Global Search */}
           <div className="space-y-3.5">
@@ -461,7 +501,7 @@ export default function Viewer({
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* 2. CENTER: 3D Ocean Scene & Floating Viewport Toolbar             */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      <section className="relative flex flex-col justify-between rounded-2xl border border-cyan-500/15 bg-[#020b1f] shadow-[0_8px_40px_rgba(0,0,0,0.7)] overflow-hidden">
+      <section className={`${mobileTab === 'viewport' ? 'flex' : 'hidden'} lg:flex relative flex-col justify-between rounded-2xl border border-cyan-500/15 bg-[#020b1f] shadow-[0_8px_40px_rgba(0,0,0,0.7)] overflow-hidden h-full`}>
         
         {/* 3D Scene Top Header Overlay */}
         <div className="absolute left-4 top-4 right-4 z-20 flex flex-wrap items-center justify-between gap-3 pointer-events-none">
@@ -751,7 +791,7 @@ export default function Viewer({
       {/* 3. RIGHT PANEL: Station Telemetry Inspector                        */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {!isViewerFullscreen && (
-        <aside className="flex flex-col justify-between gap-4 rounded-2xl border border-cyan-500/15 bg-[#04112a]/95 p-5 shadow-[0_8px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl overflow-y-auto custom-scrollbar">
+        <aside className={`${mobileTab === 'telemetry' ? 'flex' : 'hidden'} lg:flex flex-col justify-between gap-4 rounded-2xl border border-cyan-500/15 bg-[#04112a]/95 p-4 sm:p-5 shadow-[0_8px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl overflow-y-auto custom-scrollbar h-full`}>
           
           <div className="space-y-4">
             {/* Station Header */}
@@ -906,6 +946,7 @@ export default function Viewer({
         </aside>
       )}
 
+      </div>
     </div>
   );
 }

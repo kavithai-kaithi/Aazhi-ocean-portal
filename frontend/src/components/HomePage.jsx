@@ -1,4 +1,5 @@
 import React from 'react';
+import heroGlobeVideo from '../assets/hero_globe.mp4';
 import { 
   Box, 
   BarChart3, 
@@ -47,16 +48,27 @@ export default function HomePage({ onNavigate, setVariable, setDepth, setMonth }
         {/* ═════════════════════ HERO SECTION (RESTORED ORIGINAL GLOBE VIDEO LOOK) ═════════════════════ */}
         <section className="relative w-full rounded-2xl overflow-hidden border border-cyan-500/12 bg-gradient-to-br from-[#030d24] via-[#020a1a] to-[#041528] shadow-[0_8px_48px_rgba(0,0,0,0.6)] animate-fade-in-up">
           
-          {/* Futuristic Glowing Ocean Globe Background Overlay */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-end pr-8">
-            <div className="relative w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-cyan-600/25 via-sky-500/15 to-blue-700/25 blur-3xl animate-pulse opacity-70" />
-            <div className="absolute right-[-5%] top-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-cyan-500/20 shadow-[0_0_80px_rgba(6,182,212,0.25)] flex items-center justify-center animate-spin [animation-duration:40s]">
-              <div className="w-[450px] h-[450px] rounded-full border border-sky-400/20 border-dashed" />
-              <div className="w-[300px] h-[300px] rounded-full border border-cyan-300/15" />
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-[#030d24] via-[#030d24]/85 to-transparent" />
+          {/* Globe Video Background */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-end">
+            {/* Ambient Cyan Glow behind video */}
+            <div className="absolute right-4 w-[450px] h-[450px] rounded-full bg-gradient-to-tr from-cyan-500/25 via-sky-400/15 to-blue-600/25 blur-3xl opacity-80" />
+
+            {/* Video element - right positioned */}
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="absolute right-4 sm:right-12 top-1/2 -translate-y-1/2 h-[90%] max-h-[380px] object-contain opacity-90 mix-blend-screen filter drop-shadow-[0_0_25px_rgba(6,182,212,0.45)]"
+            >
+              <source src={heroGlobeVideo} type="video/mp4" />
+            </video>
+
+            {/* Fade overlay on left side for text contrast */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#030d24] via-[#030d24]/85 to-transparent z-[1]" />
+
             {/* Subtle scan line overlay */}
-            <div className="absolute inset-0 opacity-[0.025]" style={{
+            <div className="absolute inset-0 opacity-[0.025] z-[1]" style={{
               backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(56,189,248,0.1) 2px, rgba(56,189,248,0.1) 3px)'
             }} />
           </div>
