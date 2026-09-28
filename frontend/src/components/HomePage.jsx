@@ -50,23 +50,19 @@ export default function HomePage({ onNavigate, setVariable, setDepth, setMonth }
           
           {/* Full Hero Video Background Layer */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            {/* Ambient Cyan/Deep Blue Glows behind video */}
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-cyan-500/15 blur-[120px] opacity-80" />
-            <div className="absolute right-[20%] bottom-0 w-[400px] h-[400px] rounded-full bg-blue-600/15 blur-[100px] opacity-60" />
-
             {/* Video Element covering the right & center of Hero */}
             <video
               autoPlay
               loop
               muted
               playsInline
-              className="absolute right-0 top-1/2 -translate-y-1/2 w-full md:w-[65%] h-full object-cover md:object-contain opacity-90 mix-blend-screen filter drop-shadow-[0_0_40px_rgba(6,182,212,0.4)]"
+              className="absolute right-0 top-1/2 -translate-y-1/2 w-full md:w-[65%] h-full object-cover md:object-contain opacity-95 mix-blend-screen"
             >
               <source src={heroGlobeVideo} type="video/mp4" />
             </video>
 
             {/* Dynamic Multi-Stage Gradient Overlay for Text Legibility */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#020a18] via-[#020a18]/85 to-transparent z-[1]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#020a18] via-[#020a18]/80 to-transparent z-[1]" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#020a18] via-transparent to-[#020a18]/50 z-[1]" />
 
             {/* Grid scan line texture overlay */}
