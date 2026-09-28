@@ -45,48 +45,47 @@ export default function HomePage({ onNavigate, setVariable, setDepth, setMonth }
       
       <div className="relative z-10 w-full max-w-[1440px] px-6 sm:px-10 lg:px-12 py-8 space-y-10 flex flex-col items-center">
         
-        {/* ═════════════════════ HERO SECTION (RESTORED ORIGINAL GLOBE VIDEO LOOK) ═════════════════════ */}
-        <section className="relative w-full rounded-2xl overflow-hidden border border-cyan-500/12 bg-gradient-to-br from-[#030d24] via-[#020a1a] to-[#041528] shadow-[0_8px_48px_rgba(0,0,0,0.6)] animate-fade-in-up">
+        {/* ═════════════════════ HERO SECTION WITH FULL VIDEO BACKGROUND ═════════════════════ */}
+        <section className="relative w-full rounded-3xl overflow-hidden border border-cyan-500/20 bg-[#020a18] shadow-[0_12px_60px_rgba(0,0,0,0.85)] animate-fade-in-up">
           
-          {/* Globe Video Background */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-end">
-            {/* Ambient Cyan Glow behind video */}
-            <div className="absolute right-4 w-[450px] h-[450px] rounded-full bg-gradient-to-tr from-cyan-500/25 via-sky-400/15 to-blue-600/25 blur-3xl opacity-80" />
+          {/* Full Hero Video Background Layer */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {/* Ambient Cyan/Deep Blue Glows behind video */}
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-cyan-500/15 blur-[120px] opacity-80" />
+            <div className="absolute right-[20%] bottom-0 w-[400px] h-[400px] rounded-full bg-blue-600/15 blur-[100px] opacity-60" />
 
-            {/* Video element - right positioned */}
+            {/* Video Element covering the right & center of Hero */}
             <video
               autoPlay
               loop
               muted
               playsInline
-              className="absolute right-4 sm:right-12 top-1/2 -translate-y-1/2 h-[90%] max-h-[380px] object-contain opacity-90 mix-blend-screen filter drop-shadow-[0_0_25px_rgba(6,182,212,0.45)]"
+              className="absolute right-0 top-1/2 -translate-y-1/2 w-full md:w-[65%] h-full object-cover md:object-contain opacity-90 mix-blend-screen filter drop-shadow-[0_0_40px_rgba(6,182,212,0.4)]"
             >
               <source src={heroGlobeVideo} type="video/mp4" />
             </video>
 
-            {/* Fade overlay on left side for text contrast */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#030d24] via-[#030d24]/85 to-transparent z-[1]" />
+            {/* Dynamic Multi-Stage Gradient Overlay for Text Legibility */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#020a18] via-[#020a18]/85 to-transparent z-[1]" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#020a18] via-transparent to-[#020a18]/50 z-[1]" />
 
-            {/* Subtle scan line overlay */}
-            <div className="absolute inset-0 opacity-[0.025] z-[1]" style={{
-              backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(56,189,248,0.1) 2px, rgba(56,189,248,0.1) 3px)'
+            {/* Grid scan line texture overlay */}
+            <div className="absolute inset-0 opacity-[0.035] z-[1]" style={{
+              backgroundImage: 'linear-gradient(rgba(56,189,248,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(56,189,248,0.2) 1px, transparent 1px)',
+              backgroundSize: '36px 36px'
             }} />
           </div>
 
-          <div className="relative z-10 p-10 sm:p-12 lg:p-14 space-y-8 min-h-[420px] flex flex-col justify-between">
-            <div className="max-w-xl space-y-5">
-              {/* Kicker */}
-              <div className="flex items-center gap-3 text-[11px] font-mono font-bold tracking-[0.2em] text-cyan-400/90">
+          <div className="relative z-10 p-8 sm:p-12 lg:p-14 space-y-10 min-h-[460px] flex flex-col justify-between">
+            <div className="max-w-xl space-y-6">
+              {/* Kicker Badge */}
+              <div className="inline-flex items-center gap-3 px-3.5 py-1.5 rounded-full bg-cyan-950/70 border border-cyan-500/30 backdrop-blur-md shadow-[0_0_15px_rgba(6,182,212,0.2)]">
                 <span className="w-2 h-2 rounded-full bg-cyan-400 animate-glow-pulse" />
-                <span>REAL-TIME OCEAN DATA</span>
-                <span className="text-slate-600">•</span>
-                <span>BETTER INSIGHTS</span>
-                <span className="text-slate-600">•</span>
-                <span>A HEALTHIER OCEAN</span>
+                <span className="text-[11px] font-mono font-bold tracking-[0.18em] text-cyan-300">REAL-TIME OCEAN DATA PLATFORM</span>
               </div>
 
               {/* Headline */}
-              <h1 className="text-3xl sm:text-4xl md:text-[2.8rem] font-black text-white font-['Outfit'] tracking-tight leading-[1.15]">
+              <h1 className="text-3xl sm:text-4xl md:text-[3rem] font-black text-white font-['Outfit'] tracking-tight leading-[1.12]">
                 Exploring the Indian Ocean <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-blue-500 italic">
                   Through Data
@@ -94,26 +93,26 @@ export default function HomePage({ onNavigate, setVariable, setDepth, setMonth }
               </h1>
 
               {/* Subtitle */}
-              <p className="text-[15px] text-slate-300/90 leading-relaxed max-w-lg">
-                Integrated observations, advanced numerical models and in-situ Argo profiling float measurements for ocean analysis.
+              <p className="text-[15px] sm:text-[16px] text-slate-300/90 leading-relaxed max-w-lg font-normal">
+                Integrated ocean observations, 3D WebGL numerical modeling, and in-situ Argo profiling float measurements across 24 depth layers.
               </p>
 
               {/* CTA Buttons */}
               <div className="flex flex-wrap items-center gap-4 pt-2">
                 <button
                   onClick={() => handleLaunch('viewer')}
-                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 text-slate-950 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-[0_0_24px_rgba(6,182,212,0.45)] hover:shadow-[0_0_32px_rgba(6,182,212,0.65)] hover:scale-105 transition-all duration-300 cursor-pointer"
+                  className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 text-slate-950 font-extrabold text-xs sm:text-sm flex items-center gap-2.5 shadow-[0_0_28px_rgba(6,182,212,0.5)] hover:shadow-[0_0_36px_rgba(6,182,212,0.7)] hover:scale-105 transition-all duration-300 cursor-pointer"
                 >
-                  <Box className="w-4 h-4" />
+                  <Box className="w-4.5 h-4.5" />
                   <span>Explore 3D Ocean</span>
                   <ArrowRight className="w-4 h-4 ml-0.5" />
                 </button>
 
                 <button
                   onClick={() => handleLaunch('validation')}
-                  className="px-5 py-3 rounded-xl bg-[#04122d]/90 border border-cyan-500/30 text-cyan-300 font-bold text-xs sm:text-sm flex items-center gap-2 hover:bg-cyan-950/60 hover:border-cyan-400/60 transition-all duration-300 cursor-pointer shadow-lg"
+                  className="px-5 py-3.5 rounded-xl bg-[#031027]/80 backdrop-blur-md border border-cyan-500/30 text-cyan-300 font-bold text-xs sm:text-sm flex items-center gap-2.5 hover:bg-cyan-950/80 hover:border-cyan-400/60 transition-all duration-300 cursor-pointer shadow-lg"
                 >
-                  <BarChart3 className="w-4 h-4 text-cyan-400" />
+                  <BarChart3 className="w-4.5 h-4.5 text-cyan-400" />
                   <span>Open Validation Hub</span>
                 </button>
               </div>
@@ -125,10 +124,10 @@ export default function HomePage({ onNavigate, setVariable, setDepth, setMonth }
               {/* Stat 1 */}
               <div 
                 onClick={() => handleLaunch('viewer')}
-                className="stat-card flex items-center justify-between p-5 rounded-xl bg-[#04122d]/60 border border-cyan-500/12 shadow-lg hover:border-cyan-400/35 cursor-pointer group backdrop-blur-sm"
+                className="stat-card flex items-center justify-between p-5 rounded-2xl bg-[#031027]/70 backdrop-blur-md border border-cyan-500/15 shadow-xl hover:border-cyan-400/40 hover:bg-[#041638]/85 cursor-pointer group transition-all duration-300"
               >
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-cyan-950/70 border border-cyan-500/20 text-cyan-300 group-hover:shadow-[0_0_16px_rgba(6,182,212,0.3)] transition-shadow">
+                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-shadow">
                     <Database className="w-5 h-5" />
                   </div>
                   <div>
@@ -136,7 +135,7 @@ export default function HomePage({ onNavigate, setVariable, setDepth, setMonth }
                     <div className="text-[12px] text-slate-400 mt-1.5 font-medium">OpenDrift Records</div>
                   </div>
                 </div>
-                <div className="w-9 h-9 rounded-full bg-[#020b1e] border border-cyan-500/15 flex items-center justify-center text-slate-600 group-hover:text-cyan-300 group-hover:border-cyan-400/40 transition-all ml-2">
+                <div className="w-9 h-9 rounded-full bg-[#020b1e] border border-cyan-500/20 flex items-center justify-center text-slate-500 group-hover:text-cyan-300 group-hover:border-cyan-400/50 transition-all ml-2">
                   <ArrowRight className="w-4 h-4" />
                 </div>
               </div>
@@ -144,10 +143,10 @@ export default function HomePage({ onNavigate, setVariable, setDepth, setMonth }
               {/* Stat 2 */}
               <div 
                 onClick={() => handleLaunch('viewer')}
-                className="stat-card flex items-center justify-between p-5 rounded-xl bg-[#04122d]/60 border border-teal-500/12 shadow-lg hover:border-teal-400/35 cursor-pointer group backdrop-blur-sm"
+                className="stat-card flex items-center justify-between p-5 rounded-2xl bg-[#031027]/70 backdrop-blur-md border border-teal-500/15 shadow-xl hover:border-teal-400/40 hover:bg-[#041638]/85 cursor-pointer group transition-all duration-300"
               >
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-teal-950/70 border border-teal-500/20 text-teal-300 group-hover:shadow-[0_0_16px_rgba(20,184,166,0.3)] transition-shadow">
+                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-teal-950/80 border border-teal-500/30 text-teal-300 group-hover:shadow-[0_0_20px_rgba(20,184,166,0.4)] transition-shadow">
                     <Waves className="w-5 h-5" />
                   </div>
                   <div>
@@ -155,7 +154,7 @@ export default function HomePage({ onNavigate, setVariable, setDepth, setMonth }
                     <div className="text-[12px] text-slate-400 mt-1.5 font-medium">Trained Predictions</div>
                   </div>
                 </div>
-                <div className="w-9 h-9 rounded-full bg-[#020b1e] border border-cyan-500/15 flex items-center justify-center text-slate-600 group-hover:text-teal-300 group-hover:border-teal-400/40 transition-all ml-2">
+                <div className="w-9 h-9 rounded-full bg-[#020b1e] border border-cyan-500/20 flex items-center justify-center text-slate-500 group-hover:text-teal-300 group-hover:border-teal-400/50 transition-all ml-2">
                   <ArrowRight className="w-4 h-4" />
                 </div>
               </div>
@@ -163,10 +162,10 @@ export default function HomePage({ onNavigate, setVariable, setDepth, setMonth }
               {/* Stat 3 */}
               <div 
                 onClick={() => handleLaunch('viewer')}
-                className="stat-card flex items-center justify-between p-5 rounded-xl bg-[#04122d]/60 border border-amber-500/12 shadow-lg hover:border-amber-400/35 cursor-pointer group backdrop-blur-sm"
+                className="stat-card flex items-center justify-between p-5 rounded-2xl bg-[#031027]/70 backdrop-blur-md border border-amber-500/15 shadow-xl hover:border-amber-400/40 hover:bg-[#041638]/85 cursor-pointer group transition-all duration-300"
               >
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-amber-950/70 border border-amber-500/20 text-amber-300 group-hover:shadow-[0_0_16px_rgba(245,158,11,0.3)] transition-shadow">
+                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-amber-950/80 border border-amber-500/30 text-amber-300 group-hover:shadow-[0_0_20px_rgba(245,158,11,0.4)] transition-shadow">
                     <Layers className="w-5 h-5" />
                   </div>
                   <div>
@@ -174,7 +173,7 @@ export default function HomePage({ onNavigate, setVariable, setDepth, setMonth }
                     <div className="text-[12px] text-slate-400 mt-1.5 font-medium">0m to 2000m Depth</div>
                   </div>
                 </div>
-                <div className="w-9 h-9 rounded-full bg-[#020b1e] border border-cyan-500/15 flex items-center justify-center text-slate-600 group-hover:text-amber-300 group-hover:border-amber-400/40 transition-all ml-2">
+                <div className="w-9 h-9 rounded-full bg-[#020b1e] border border-cyan-500/20 flex items-center justify-center text-slate-500 group-hover:text-amber-300 group-hover:border-amber-400/50 transition-all ml-2">
                   <ArrowRight className="w-4 h-4" />
                 </div>
               </div>
@@ -182,10 +181,10 @@ export default function HomePage({ onNavigate, setVariable, setDepth, setMonth }
               {/* Stat 4 */}
               <div 
                 onClick={() => handleLaunch('validation')}
-                className="stat-card flex items-center justify-between p-5 rounded-xl bg-[#04122d]/60 border border-purple-500/12 shadow-lg hover:border-purple-400/35 cursor-pointer group backdrop-blur-sm"
+                className="stat-card flex items-center justify-between p-5 rounded-2xl bg-[#031027]/70 backdrop-blur-md border border-purple-500/15 shadow-xl hover:border-purple-400/40 hover:bg-[#041638]/85 cursor-pointer group transition-all duration-300"
               >
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-purple-950/70 border border-purple-500/20 text-purple-300 group-hover:shadow-[0_0_16px_rgba(168,85,247,0.3)] transition-shadow">
+                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-purple-950/80 border border-purple-500/30 text-purple-300 group-hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] transition-shadow">
                     <Thermometer className="w-5 h-5" />
                   </div>
                   <div>
