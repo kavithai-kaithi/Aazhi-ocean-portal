@@ -7,7 +7,8 @@ import {
 } from '../lib/ocean.js';
 import { COLORMAPS, gradientCss } from '../lib/colormap.js';
 import { 
-  Layers, 
+  Layers,
+  Box,
   Search, 
   Eye, 
   EyeOff,
@@ -43,7 +44,9 @@ import {
   Cloud,
   FileSpreadsheet,
   FileCode,
-  FileJson
+  FileJson,
+  X,
+  Maximize
 } from 'lucide-react';
 
 export default function Viewer({
@@ -90,6 +93,8 @@ export default function Viewer({
   const [isViewerFullscreen, setIsViewerFullscreen] = useState(false);
   const [displayMode, setDisplayMode] = useState('both');
   const [mobileTab, setMobileTab] = useState('viewport'); // 'layers' | 'viewport' | 'telemetry'
+  const [isSeparate3DView, setIsSeparate3DView] = useState(false);
+  const [showMobileOverlays, setShowMobileOverlays] = useState(true);
 
   // Collapsible dataset groups state
   const [openGroups, setOpenGroups] = useState({
@@ -263,12 +268,166 @@ export default function Viewer({
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#020a18] text-slate-100 overflow-hidden select-none">
+    <div className="flex flex-col flex-1 h-full w-full min-h-0 bg-[#020a18] text-slate-100 overflow-hidden select-none">
+      
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* DEDICATED FULLSCREEN SEPARATE 3D FOCUS VIEW MODAL                   */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {isSeparate3DView && (
+        <div className="fixed inset-0 z-[100] bg-[#010714] flex flex-col justify-between overflow-hidden animate-fade-in-up select-none">
+          {/* Top Control Bar for Separate View */}
+          <div className="relative z-30 px-3 sm:px-6 py-3 bg-[#020e26]/95 border-b border-cyan-500/30 backdrop-blur-2xl flex flex-wrap items-center justify-between gap-3 shadow-[0_4px_30px_rgba(0,0,0,0.8)] shrink-0">
+            
+            {/* Exit Button & Info */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsSeparate3DView(false)}
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-[0_0_24px_rgba(6,182,212,0.5)] hover:scale-105 transition cursor-pointer font-['Outfit']"
+              >
+                <X className="w-4 h-4 stroke-[3]" />
+                <span>Exit Separate 3D View</span>
+              </button>
+
+              <div className="hidden sm:flex items-center gap-2 border-l border-white/10 pl-3">
+                <h2 className="text-base font-black text-white font-['Outfit'] tracking-tight">
+                  {meta.label}
+                </h2>
+                <span className="text-xs font-mono font-bold text-cyan-300 bg-cyan-950/90 border border-cyan-400/40 px-2.5 py-0.5 rounded-lg">
+                  {depth === 0 ? 'Surface (0m)' : `${depth}m Depth`}
+                </span>
+                <span className="text-xs font-mono text-amber-300 bg-amber-950/80 border border-amber-400/30 px-2 py-0.5 rounded-lg font-bold">
+                  {MONTHS[time]} {year}
+                </span>
+              </div>
+            </div>
+
+            {/* Interactive Controls Toolbar for Separate View */}
+            <div className="flex items-center gap-2 flex-wrap text-xs font-mono font-bold">
+              {/* Depth Slider */}
+              <div className="flex items-center gap-2 bg-[#031333] px-3 py-1.5 rounded-xl border border-cyan-500/30 shadow-inner">
+                <span className="text-cyan-300/80 text-[11px]">DEPTH:</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={2000}
+                  step={25}
+                  value={depth}
+                  onChange={(e) => setDepth(+e.target.value)}
+                  className="w-24 sm:w-40 accent-cyan-400 cursor-pointer h-1.5 bg-slate-800 rounded-full"
+                />
+                <span className="text-cyan-300 font-mono font-black text-xs min-w-[36px] text-right">{depth}m</span>
+              </div>
+
+              {/* Colormap Dropdown */}
+              <div className="flex items-center gap-1.5 bg-[#031333] px-2.5 py-1.5 rounded-xl border border-cyan-500/30">
+                <Palette className="w-3.5 h-3.5 text-cyan-400" />
+                <select
+                  value={activeColormap}
+                  onChange={(e) => setActiveColormap(e.target.value)}
+                  className="bg-transparent text-cyan-300 font-mono font-bold cursor-pointer text-xs focus:outline-none uppercase"
+                >
+                  {['thermal', 'viridis', 'cividis', 'turbo', 'plasma', 'speed', 'ice'].map((cm) => (
+                    <option key={cm} value={cm} className="bg-[#020a18] text-slate-200">{cm}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Fog Toggle */}
+              <button
+                onClick={() => setFogEnabled(!fogEnabled)}
+                className={`px-3 py-1.5 rounded-xl border transition cursor-pointer flex items-center gap-1.5 ${
+                  fogEnabled ? 'bg-slate-900 text-cyan-300 border-white/10' : 'bg-emerald-950 text-emerald-300 border-emerald-400/40 font-bold'
+                }`}
+              >
+                {fogEnabled ? <Cloud className="w-3.5 h-3.5" /> : <CloudOff className="w-3.5 h-3.5 text-emerald-400" />}
+                <span className="hidden sm:inline">{fogEnabled ? 'Fog: ON' : 'Fog: OFF (Clear)'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Dedicated Canvas Viewport */}
+          <div className="relative flex-1 w-full h-full min-h-0 bg-[#020a18] overflow-hidden">
+            <OceanScene
+              variable={variable}
+              depth={depth}
+              time={time}
+              transectLat={transectLat}
+              showSlice={showSlice}
+              showStack={showStack}
+              showTransect={showTransect}
+              showVectors={showVectors}
+              showFloor={showFloor}
+              showObs={showObs}
+              selected={selectedStationId}
+              onSelect={setSelectedStationId}
+              fogEnabled={fogEnabled}
+              customColormap={activeColormap}
+            />
+
+            {/* Floating Interactive Controls Layer at Bottom */}
+            <div className="absolute bottom-4 left-3 right-3 sm:left-6 sm:right-6 z-30 flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-[#030d24]/90 border border-cyan-500/30 backdrop-blur-2xl shadow-[0_10px_40px_rgba(0,0,0,0.85)]">
+              
+              {/* Layer Visibility Toggles */}
+              <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar max-w-full py-0.5">
+                {[
+                  { id: 'slice', label: 'Depth Plane', active: showSlice, toggle: () => setShowSlice(!showSlice) },
+                  { id: 'stack', label: 'Strata Stack', active: showStack, toggle: () => setShowStack(!showStack) },
+                  { id: 'transect', label: 'Transect', active: showTransect, toggle: () => setShowTransect(!showTransect) },
+                  { id: 'vectors', label: 'Currents', active: showVectors, toggle: () => setShowVectors(!showVectors) },
+                  { id: 'floor', label: 'Bathymetry', active: showFloor, toggle: () => setShowFloor(!showFloor) },
+                  { id: 'obs', label: 'Argo Floats', active: showObs, toggle: () => setShowObs(!showObs) },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={item.toggle}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition cursor-pointer whitespace-nowrap border ${
+                      item.active
+                        ? 'bg-cyan-950/90 text-cyan-300 border-cyan-400/50 shadow-[0_0_12px_rgba(6,182,212,0.3)]'
+                        : 'bg-slate-900/60 text-slate-500 border-white/5 hover:text-white'
+                    }`}
+                  >
+                    {item.label}: {item.active ? 'ON' : 'OFF'}
+                  </button>
+                ))}
+              </div>
+
+              {/* Time Playback Controls */}
+              <div className="flex items-center gap-3 text-xs font-mono text-slate-300 shrink-0">
+                <span className="text-amber-300 font-bold bg-amber-950/60 px-2 py-1 rounded border border-amber-400/25">
+                  {MONTHS[time]} {year}
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setTime((prev) => (prev === 0 ? 11 : prev - 1))}
+                    className="p-1.5 rounded-lg bg-slate-900 border border-cyan-500/20 text-cyan-300 hover:text-white cursor-pointer"
+                  >
+                    <SkipBack className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setIsPlaying(!isPlaying)}
+                    className="px-3 py-1.5 rounded-lg bg-cyan-400 text-slate-950 font-black flex items-center gap-1 cursor-pointer shadow-md"
+                  >
+                    {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                    <span>{isPlaying ? 'Pause' : 'Play'}</span>
+                  </button>
+                  <button
+                    onClick={() => setTime((prev) => (prev === 11 ? 0 : prev + 1))}
+                    className="p-1.5 rounded-lg bg-slate-900 border border-cyan-500/20 text-cyan-300 hover:text-white cursor-pointer"
+                  >
+                    <SkipForward className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Mobile Segment Control Switcher Bar (Visible on screens < 1024px) */}
       {!isViewerFullscreen && (
-        <div className="flex lg:hidden items-center justify-center p-2 bg-[#010915] border-b border-cyan-500/20 shrink-0">
-          <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-cyan-500/30 text-xs font-mono font-bold w-full max-w-sm justify-between shadow-lg">
+        <div className="flex lg:hidden flex-col gap-2 p-2 bg-[#010915] border-b border-cyan-500/20 shrink-0">
+          <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-cyan-500/30 text-xs font-mono font-bold w-full max-w-md mx-auto justify-between shadow-lg">
             <button
               onClick={() => setMobileTab('layers')}
               className={`flex-1 py-1.5 rounded-lg transition text-center cursor-pointer flex items-center justify-center gap-1.5 ${
@@ -286,7 +445,7 @@ export default function Viewer({
               }`}
             >
               <Box className="w-3.5 h-3.5" />
-              <span>3D Scene</span>
+              <span>3D Ocean Scene</span>
             </button>
 
             <button
@@ -299,10 +458,34 @@ export default function Viewer({
               <span>Station</span>
             </button>
           </div>
+
+          {/* Highlighted Mobile 3D Quick Action Row when viewing 3D Scene */}
+          {mobileTab === 'viewport' && (
+            <div className="flex items-center justify-between gap-2 max-w-md mx-auto w-full px-1">
+              <button
+                onClick={() => setIsSeparate3DView(true)}
+                className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(6,182,212,0.5)] cursor-pointer hover:scale-[1.02] transition font-['Outfit']"
+              >
+                <Maximize className="w-4 h-4" />
+                <span>⚡ SEPARATE VIEW 3D IMG</span>
+              </button>
+
+              <button
+                onClick={() => setShowMobileOverlays(!showMobileOverlays)}
+                className={`py-2 px-3 rounded-xl border text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer transition ${
+                  showMobileOverlays ? 'bg-cyan-950/80 border-cyan-400/40 text-cyan-300' : 'bg-slate-900 text-slate-400 border-white/10'
+                }`}
+                title="Toggle Floating Controls Overlay"
+              >
+                {showMobileOverlays ? <Eye className="w-3.5 h-3.5 text-cyan-400" /> : <EyeOff className="w-3.5 h-3.5" />}
+                <span>{showMobileOverlays ? 'UI Controls: ON' : 'UI Controls: OFF'}</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
 
-      <div className={`grid flex-1 w-full grid-cols-1 ${isViewerFullscreen ? 'lg:grid-cols-1 p-0' : 'lg:grid-cols-[300px_1fr_360px] xl:grid-cols-[340px_1fr_400px] p-2.5 sm:p-4 gap-3 sm:gap-4'} bg-[#020a18] text-slate-100 overflow-hidden select-none`}>
+      <div className={`grid flex-1 w-full min-h-0 grid-cols-1 ${isViewerFullscreen ? 'lg:grid-cols-1 p-0' : 'lg:grid-cols-[280px_1fr_340px] xl:grid-cols-[340px_1fr_400px] p-2.5 sm:p-4 gap-3 sm:gap-4'} bg-[#020a18] text-slate-100 overflow-hidden select-none`}>
         
         {/* ═══════════════════════════════════════════════════════════════════ */}
         {/* 1. LEFT SIDEBAR: Redesigned Data Explorer & Layer Controls        */}
@@ -501,135 +684,191 @@ export default function Viewer({
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* 2. CENTER: 3D Ocean Scene & Floating Viewport Toolbar             */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      <section className={`${mobileTab === 'viewport' ? 'flex' : 'hidden'} lg:flex relative flex-col justify-between rounded-2xl border border-cyan-500/15 bg-[#020b1f] shadow-[0_8px_40px_rgba(0,0,0,0.7)] overflow-hidden h-full`}>
+      <section className={`${mobileTab === 'viewport' ? 'flex' : 'hidden'} lg:flex relative flex-col justify-between rounded-2xl border border-cyan-500/20 bg-[#020b1f] shadow-[0_8px_40px_rgba(0,0,0,0.7)] overflow-hidden h-full min-h-0`}>
         
-        {/* 3D Scene Top Header Overlay */}
-        <div className="absolute left-4 top-4 right-4 z-20 flex flex-wrap items-center justify-between gap-3 pointer-events-none">
-          
-          {/* Active Variable Header */}
-          <div className="pointer-events-auto flex items-center gap-3 bg-[#030d24]/90 border border-cyan-500/25 p-3.5 rounded-2xl backdrop-blur-xl shadow-xl">
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h2 className="text-xl font-black text-white font-['Outfit'] tracking-tight leading-none">
-                  {meta.label}
-                </h2>
-                <span className="text-xs font-mono font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-400/30 px-2 py-0.5 rounded">
-                  {meta.unit}
-                </span>
+        {/* 3D Scene Top Header Overlay (Responsive) */}
+        {showMobileOverlays && (
+          <div className="absolute left-2 sm:left-4 top-2 sm:top-4 right-2 sm:right-4 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+            
+            {/* Active Variable Header */}
+            <div className="pointer-events-auto flex items-center gap-2 sm:gap-3 bg-[#030d24]/90 border border-cyan-500/25 p-2 sm:p-3.5 rounded-2xl backdrop-blur-xl shadow-xl">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm sm:text-xl font-black text-white font-['Outfit'] tracking-tight leading-none">
+                    {meta.label}
+                  </h2>
+                  <span className="text-[10px] sm:text-xs font-mono font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-400/30 px-1.5 sm:px-2 py-0.5 rounded">
+                    {meta.unit}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-mono text-slate-400 mt-1">
+                  <span>IBR</span>
+                  <span>•</span>
+                  <span>{MONTHS[time]} {year}</span>
+                  <span>•</span>
+                  <span className="text-amber-300 font-bold">{depth === 0 ? 'Surface' : `${depth}m`}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-xs font-mono text-slate-400 mt-1">
-                <span>IBR Model</span>
-                <span>•</span>
-                <span>{MONTHS[time]} {year}</span>
-                <span>•</span>
-                <span className="text-amber-300 font-bold">{depth === 0 ? 'Surface' : `${depth}m`}</span>
-              </div>
+
+              {/* Separate View Launcher Button */}
+              <button
+                onClick={() => setIsSeparate3DView(true)}
+                className="p-1.5 sm:p-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-bold text-xs flex items-center gap-1 hover:scale-105 transition cursor-pointer shadow-md ml-1"
+                title="Open Separate Clean 3D Focus View"
+              >
+                <Maximize className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span className="hidden sm:inline font-['Outfit']">Separate 3D View</span>
+              </button>
+
+              <button
+                onClick={() => setShowMetadataDrawer(!showMetadataDrawer)}
+                className="p-1.5 sm:p-2 rounded-xl bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 hover:text-white transition cursor-pointer"
+                title="Technical Metadata Info"
+              >
+                <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
             </div>
 
-            <button
-              onClick={() => setShowMetadataDrawer(!showMetadataDrawer)}
-              className="p-2 rounded-xl bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 hover:text-white transition cursor-pointer ml-2"
-              title="Technical Metadata Info"
-            >
-              <Info className="w-4 h-4" />
-            </button>
-          </div>
+            {/* Model / In-Situ Mode Toggle Pills */}
+            <div className="pointer-events-auto hidden sm:flex items-center gap-1 bg-[#030d24]/90 border border-cyan-500/20 p-1.5 rounded-2xl backdrop-blur-xl shadow-xl text-xs font-mono font-bold">
+              {[
+                { id: 'model', label: 'Model' },
+                { id: 'insitu', label: 'In-Situ' },
+                { id: 'both', label: 'Both' },
+              ].map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => setDisplayMode(m.id)}
+                  className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${
+                    displayMode === m.id
+                      ? 'bg-cyan-400 text-slate-950 shadow-md font-extrabold'
+                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
 
-          {/* Model / In-Situ Mode Toggle Pills */}
-          <div className="pointer-events-auto flex items-center gap-1 bg-[#030d24]/90 border border-cyan-500/20 p-1.5 rounded-2xl backdrop-blur-xl shadow-xl text-xs font-mono font-bold">
-            {[
-              { id: 'model', label: 'Model' },
-              { id: 'insitu', label: 'In-Situ' },
-              { id: 'both', label: 'Both' },
-            ].map((m) => (
-              <button
-                key={m.id}
-                onClick={() => setDisplayMode(m.id)}
-                className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${
-                  displayMode === m.id
-                    ? 'bg-cyan-400 text-slate-950 shadow-md font-extrabold'
-                    : 'text-slate-400 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                {m.label}
-              </button>
-            ))}
           </div>
-
-        </div>
+        )}
 
         {/* Floating 3D Scene Controls Toolbar */}
-        <div className="absolute top-24 left-4 z-20 flex flex-col gap-2 pointer-events-auto">
-          <div className="flex flex-col gap-1.5 p-2 rounded-2xl bg-[#030d24]/90 border border-cyan-500/20 backdrop-blur-xl shadow-xl">
-            {/* Reset */}
-            <button
-              onClick={() => { setDepth(0); setTransectLat(12); }}
-              className="p-2 rounded-xl bg-slate-900/80 text-cyan-300 border border-white/5 hover:bg-cyan-950/80 hover:border-cyan-400/40 transition cursor-pointer flex items-center gap-1.5 text-xs font-mono"
-              title="Reset Scene View"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Reset</span>
-            </button>
-
-            {/* Fog Toggle */}
-            <button
-              onClick={() => setFogEnabled(!fogEnabled)}
-              className={`p-2 rounded-xl border transition cursor-pointer flex items-center gap-1.5 text-xs font-mono ${
-                fogEnabled 
-                  ? 'bg-slate-900/80 text-cyan-300 border-white/5' 
-                  : 'bg-emerald-950/90 text-emerald-300 border-emerald-400/40 font-bold'
-              }`}
-              title={fogEnabled ? "Atmospheric Fog Active - Click to Disable" : "Clear View Mode (Fog Disabled)"}
-            >
-              {fogEnabled ? <Cloud className="w-3.5 h-3.5" /> : <CloudOff className="w-3.5 h-3.5 text-emerald-400" />}
-              <span className="hidden sm:inline">{fogEnabled ? 'Fog: ON' : 'Fog: OFF (Clear)'}</span>
-            </button>
-
-            {/* Color Palette Selector Dropdown */}
-            <div className="relative group">
+        {showMobileOverlays && (
+          <div className="absolute top-16 sm:top-24 left-2 sm:left-4 z-20 flex flex-col gap-2 pointer-events-auto">
+            <div className="flex flex-col gap-1.5 p-1.5 sm:p-2 rounded-2xl bg-[#030d24]/90 border border-cyan-500/20 backdrop-blur-xl shadow-xl">
+              {/* Separate View Button (Mobile Direct Access) */}
               <button
-                className="w-full p-2 rounded-xl bg-slate-900/80 text-cyan-300 border border-white/5 hover:bg-cyan-950/80 hover:border-cyan-400/40 transition cursor-pointer flex items-center gap-1.5 text-xs font-mono"
-                title="Select Scientific Color Palette"
+                onClick={() => setIsSeparate3DView(true)}
+                className="p-2 rounded-xl bg-gradient-to-r from-cyan-400 to-sky-400 text-slate-950 border border-cyan-300 hover:scale-105 transition cursor-pointer flex items-center gap-1.5 text-xs font-mono font-bold shadow-[0_0_12px_rgba(6,182,212,0.4)]"
+                title="Open Separate Fullscreen 3D View"
               >
-                <Palette className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="hidden sm:inline capitalize">{activeColormap}</span>
+                <Maximize className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Separate 3D</span>
               </button>
-              
-              <div className="hidden group-hover:flex flex-col gap-1 absolute left-full top-0 ml-2 p-2 rounded-2xl bg-[#030d24] border border-cyan-500/30 shadow-2xl z-40 min-w-[140px]">
-                {['thermal', 'viridis', 'cividis', 'turbo', 'plasma', 'speed', 'ice'].map((cm) => (
-                  <button
-                    key={cm}
-                    onClick={() => setActiveColormap(cm)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold capitalize text-left flex items-center justify-between cursor-pointer transition ${
-                      activeColormap === cm ? 'bg-cyan-400 text-slate-950' : 'text-slate-300 hover:bg-white/10'
-                    }`}
-                  >
-                    <span>{cm}</span>
-                    <div className="w-6 h-2 rounded" style={{ background: gradientCss(cm, 6) }} />
-                  </button>
-                ))}
+
+              {/* Reset */}
+              <button
+                onClick={() => { setDepth(0); setTransectLat(12); }}
+                className="p-2 rounded-xl bg-slate-900/80 text-cyan-300 border border-white/5 hover:bg-cyan-950/80 hover:border-cyan-400/40 transition cursor-pointer flex items-center gap-1.5 text-xs font-mono"
+                title="Reset Scene View"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Reset</span>
+              </button>
+
+              {/* Fog Toggle */}
+              <button
+                onClick={() => setFogEnabled(!fogEnabled)}
+                className={`p-2 rounded-xl border transition cursor-pointer flex items-center gap-1.5 text-xs font-mono ${
+                  fogEnabled 
+                    ? 'bg-slate-900/80 text-cyan-300 border-white/5' 
+                    : 'bg-emerald-950/90 text-emerald-300 border-emerald-400/40 font-bold'
+                }`}
+                title={fogEnabled ? "Atmospheric Fog Active - Click to Disable" : "Clear View Mode (Fog Disabled)"}
+              >
+                {fogEnabled ? <Cloud className="w-3.5 h-3.5" /> : <CloudOff className="w-3.5 h-3.5 text-emerald-400" />}
+                <span className="hidden sm:inline">{fogEnabled ? 'Fog: ON' : 'Fog: OFF (Clear)'}</span>
+              </button>
+
+              {/* Color Palette Selector Dropdown */}
+              <div className="relative group">
+                <button
+                  className="w-full p-2 rounded-xl bg-slate-900/80 text-cyan-300 border border-white/5 hover:bg-cyan-950/80 hover:border-cyan-400/40 transition cursor-pointer flex items-center gap-1.5 text-xs font-mono"
+                  title="Select Scientific Color Palette"
+                >
+                  <Palette className="w-3.5 h-3.5 text-cyan-400" />
+                  <span className="hidden sm:inline capitalize">{activeColormap}</span>
+                </button>
+                
+                <div className="hidden group-hover:flex flex-col gap-1 absolute left-full top-0 ml-2 p-2 rounded-2xl bg-[#030d24] border border-cyan-500/30 shadow-2xl z-40 min-w-[140px]">
+                  {['thermal', 'viridis', 'cividis', 'turbo', 'plasma', 'speed', 'ice'].map((cm) => (
+                    <button
+                      key={cm}
+                      onClick={() => setActiveColormap(cm)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold capitalize text-left flex items-center justify-between cursor-pointer transition ${
+                        activeColormap === cm ? 'bg-cyan-400 text-slate-950' : 'text-slate-300 hover:bg-white/10'
+                      }`}
+                    >
+                      <span>{cm}</span>
+                      <div className="w-6 h-2 rounded" style={{ background: gradientCss(cm, 6) }} />
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              {/* Fullscreen */}
+              <button
+                onClick={() => setIsViewerFullscreen(!isViewerFullscreen)}
+                className="p-2 rounded-xl bg-slate-900/80 text-cyan-300 border border-white/5 hover:bg-cyan-950/80 hover:border-cyan-400/40 transition cursor-pointer flex items-center gap-1.5 text-xs font-mono"
+                title="Toggle Fullscreen"
+              >
+                {isViewerFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                <span className="hidden sm:inline">{isViewerFullscreen ? 'Exit' : 'Fullscreen'}</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Slim Vertical Depth Adjustment Widget (Desktop/Tablet) */}
+        {showMobileOverlays && (
+          <div className="hidden sm:flex absolute top-1/2 -translate-y-1/2 right-3 sm:right-4 z-20 flex-col items-center gap-2.5 px-2.5 py-3.5 rounded-2xl bg-[#030d24]/80 border border-cyan-500/20 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] pointer-events-auto select-none transition-all duration-200 hover:border-cyan-400/40">
+            <div className="text-[9px] font-mono font-bold tracking-widest text-cyan-300/90 uppercase [writing-mode:vertical-rl] rotate-180">
+              DEPTH
+            </div>
+            
+            <div className="relative h-44 sm:h-52 flex items-center justify-center py-1">
+              <input
+                type="range"
+                min={0}
+                max={2000}
+                step={25}
+                value={depth}
+                onChange={(e) => setDepth(+e.target.value)}
+                className="h-full accent-cyan-400 cursor-pointer text-cyan-400 bg-slate-800/80 rounded-full w-1.5"
+                style={{ writingMode: 'vertical-lr', direction: 'rtl' }}
+              />
             </div>
 
-            {/* Fullscreen */}
-            <button
-              onClick={() => setIsViewerFullscreen(!isViewerFullscreen)}
-              className="p-2 rounded-xl bg-slate-900/80 text-cyan-300 border border-white/5 hover:bg-cyan-950/80 hover:border-cyan-400/40 transition cursor-pointer flex items-center gap-1.5 text-xs font-mono"
-              title="Toggle Fullscreen"
-            >
-              {isViewerFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">{isViewerFullscreen ? 'Exit' : 'Fullscreen'}</span>
-            </button>
-          </div>
-        </div>
+            {/* Quick Depth Presets */}
+            <div className="flex flex-col items-center gap-1 text-[10px] font-mono text-slate-400 font-medium">
+              <button onClick={() => setDepth(0)} className={`hover:text-cyan-300 cursor-pointer transition ${depth === 0 ? 'text-cyan-300 font-bold' : ''}`}>0m</button>
+              <button onClick={() => setDepth(100)} className={`hover:text-cyan-300 cursor-pointer transition ${depth === 100 ? 'text-cyan-300 font-bold' : ''}`}>100m</button>
+              <button onClick={() => setDepth(500)} className={`hover:text-cyan-300 cursor-pointer transition ${depth === 500 ? 'text-cyan-300 font-bold' : ''}`}>500m</button>
+              <button onClick={() => setDepth(2000)} className={`hover:text-cyan-300 cursor-pointer transition ${depth === 2000 ? 'text-cyan-300 font-bold' : ''}`}>2k m</button>
+            </div>
 
-        {/* Slim Vertical Depth Adjustment Widget */}
-        <div className="absolute top-1/2 -translate-y-1/2 right-3 sm:right-4 z-20 flex flex-col items-center gap-2.5 px-2.5 py-3.5 rounded-2xl bg-[#030d24]/80 border border-cyan-500/20 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] pointer-events-auto select-none transition-all duration-200 hover:border-cyan-400/40">
-          <div className="text-[9px] font-mono font-bold tracking-widest text-cyan-300/90 uppercase [writing-mode:vertical-rl] rotate-180">
-            DEPTH
+            {/* Compact Depth Badge */}
+            <div className="mt-0.5 px-2 py-0.5 rounded-lg bg-cyan-950/90 border border-cyan-400/40 text-cyan-300 font-mono font-bold text-[11px] shadow-md whitespace-nowrap">
+              {depth}m
+            </div>
           </div>
-          
-          <div className="relative h-48 sm:h-52 flex items-center justify-center py-1">
+        )}
+
+        {/* Horizontal Mobile Depth Bar (Visible on mobile screens < 640px when overlays active) */}
+        {showMobileOverlays && (
+          <div className="flex sm:hidden absolute top-16 right-2 z-20 items-center gap-1.5 p-2 rounded-xl bg-[#030d24]/90 border border-cyan-500/30 backdrop-blur-md pointer-events-auto">
+            <span className="text-[10px] font-mono font-bold text-cyan-300">DEPTH:</span>
             <input
               type="range"
               min={0}
@@ -637,27 +876,14 @@ export default function Viewer({
               step={25}
               value={depth}
               onChange={(e) => setDepth(+e.target.value)}
-              className="h-full accent-cyan-400 cursor-pointer text-cyan-400 bg-slate-800/80 rounded-full w-1.5"
-              style={{ writingMode: 'vertical-lr', direction: 'rtl' }}
+              className="w-20 accent-cyan-400 cursor-pointer h-1 bg-slate-800 rounded-full"
             />
+            <span className="text-[10px] font-mono font-extrabold text-cyan-300">{depth}m</span>
           </div>
+        )}
 
-          {/* Quick Depth Presets */}
-          <div className="flex flex-col items-center gap-1 text-[10px] font-mono text-slate-400 font-medium">
-            <button onClick={() => setDepth(0)} className={`hover:text-cyan-300 cursor-pointer transition ${depth === 0 ? 'text-cyan-300 font-bold' : ''}`}>0m</button>
-            <button onClick={() => setDepth(100)} className={`hover:text-cyan-300 cursor-pointer transition ${depth === 100 ? 'text-cyan-300 font-bold' : ''}`}>100m</button>
-            <button onClick={() => setDepth(500)} className={`hover:text-cyan-300 cursor-pointer transition ${depth === 500 ? 'text-cyan-300 font-bold' : ''}`}>500m</button>
-            <button onClick={() => setDepth(2000)} className={`hover:text-cyan-300 cursor-pointer transition ${depth === 2000 ? 'text-cyan-300 font-bold' : ''}`}>2k m</button>
-          </div>
-
-          {/* Compact Depth Badge */}
-          <div className="mt-0.5 px-2 py-0.5 rounded-lg bg-cyan-950/90 border border-cyan-400/40 text-cyan-300 font-mono font-bold text-[11px] shadow-md whitespace-nowrap">
-            {depth}m
-          </div>
-        </div>
-
-        {/* 3D WebGL Canvas */}
-        <div className="relative w-full h-full">
+        {/* 3D WebGL Canvas Container */}
+        <div className="relative flex-1 w-full min-h-[350px] sm:min-h-[440px] overflow-hidden">
           <OceanScene
             variable={variable}
             depth={depth}
@@ -677,65 +903,67 @@ export default function Viewer({
         </div>
 
         {/* Horizontal Color Legend Bar at Bottom of Viewport */}
-        <div className="pointer-events-none absolute bottom-16 left-4 right-4 z-20 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-cyan-500/20 bg-[#030d24]/92 p-3 backdrop-blur-xl shadow-xl">
-          <div className="flex items-center gap-3.5 pointer-events-auto">
-            <span className="text-xs font-bold text-white font-['Outfit']">{meta.label.split(' ')[0]} ({meta.unit})</span>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-slate-300 font-semibold">{meta.range[0]}{meta.unit}</span>
-              <div 
-                className="h-3.5 w-48 sm:w-64 rounded-md shadow-inner border border-white/15"
-                style={{ background: gradientCss(activeColormap, 12) }}
-              />
-              <span className="text-xs font-mono text-slate-300 font-semibold">{meta.range[1]}{meta.unit}</span>
+        {showMobileOverlays && (
+          <div className="pointer-events-none absolute bottom-14 sm:bottom-16 left-2 sm:left-4 right-2 sm:right-4 z-20 flex flex-wrap items-center justify-between gap-2 sm:gap-4 rounded-xl border border-cyan-500/20 bg-[#030d24]/92 p-2 sm:p-3 backdrop-blur-xl shadow-xl text-xs">
+            <div className="flex items-center gap-2 sm:gap-3.5 pointer-events-auto">
+              <span className="text-[11px] sm:text-xs font-bold text-white font-['Outfit']">{meta.label.split(' ')[0]} ({meta.unit})</span>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="text-[10px] sm:text-xs font-mono text-slate-300 font-semibold">{meta.range[0]}{meta.unit}</span>
+                <div 
+                  className="h-2.5 sm:h-3.5 w-28 sm:w-64 rounded-md shadow-inner border border-white/15"
+                  style={{ background: gradientCss(activeColormap, 12) }}
+                />
+                <span className="text-[10px] sm:text-xs font-mono text-slate-300 font-semibold">{meta.range[1]}{meta.unit}</span>
+              </div>
+            </div>
+
+            <div className="hidden sm:flex items-center gap-4 text-xs font-mono font-medium text-slate-300 pointer-events-auto">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
+                Numerical Model
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+                In-Situ Cast
+              </span>
             </div>
           </div>
-
-          <div className="flex items-center gap-4 text-xs font-mono font-medium text-slate-300 pointer-events-auto">
-            <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
-              Numerical Model
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
-              In-Situ Cast
-            </span>
-          </div>
-        </div>
+        )}
 
         {/* Time-Series Animation Playbar (Time-Lapse Player) */}
-        <div className="z-30 w-full bg-[#010916] border-t border-cyan-500/20 px-4 py-2.5 flex flex-wrap items-center justify-between gap-4 shadow-2xl shrink-0 select-none">
+        <div className="z-30 w-full bg-[#010916] border-t border-cyan-500/20 px-2 sm:px-4 py-2 flex flex-wrap items-center justify-between gap-2 sm:gap-4 shadow-2xl shrink-0 select-none">
           
           {/* Playback Controls (Step Back, Play/Pause, Step Forward) & Speed Multipliers */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Step Backward */}
             <button
               onClick={() => setTime((prev) => (prev === 0 ? 11 : prev - 1))}
               title="Step Backward (Previous Month)"
-              className="p-2 rounded-xl bg-slate-900 border border-cyan-500/20 text-cyan-300 hover:text-white hover:border-cyan-400/50 transition cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-xl bg-slate-900 border border-cyan-500/20 text-cyan-300 hover:text-white hover:border-cyan-400/50 transition cursor-pointer"
             >
-              <SkipBack className="w-4 h-4" />
+              <SkipBack className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
             {/* Play / Pause Toggle */}
             <button
               onClick={() => setIsPlaying(!isPlaying)}
               title={isPlaying ? "Pause Time-Lapse" : "Play Time-Lapse Animation"}
-              className="p-2 rounded-xl bg-cyan-400 text-slate-950 shadow-[0_0_16px_rgba(6,182,212,0.4)] hover:scale-105 transition cursor-pointer font-bold"
+              className="p-1.5 sm:p-2 rounded-xl bg-cyan-400 text-slate-950 shadow-[0_0_16px_rgba(6,182,212,0.4)] hover:scale-105 transition cursor-pointer font-bold"
             >
-              {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+              {isPlaying ? <Pause className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-0.5" />}
             </button>
 
             {/* Step Forward */}
             <button
               onClick={() => setTime((prev) => (prev === 11 ? 0 : prev + 1))}
               title="Step Forward (Next Month)"
-              className="p-2 rounded-xl bg-slate-900 border border-cyan-500/20 text-cyan-300 hover:text-white hover:border-cyan-400/50 transition cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-xl bg-slate-900 border border-cyan-500/20 text-cyan-300 hover:text-white hover:border-cyan-400/50 transition cursor-pointer"
             >
-              <SkipForward className="w-4 h-4" />
+              <SkipForward className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
             {/* Speed Multipliers (1x, 5x, 10x) */}
-            <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-white/5 text-xs font-mono font-bold ml-1">
+            <div className="hidden sm:flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-white/5 text-xs font-mono font-bold ml-1">
               {[1, 5, 10].map((spd) => (
                 <button
                   key={spd}
@@ -751,8 +979,8 @@ export default function Viewer({
           </div>
 
           {/* Interactive Month Scrubber Slider */}
-          <div className="flex-1 max-w-xl flex items-center gap-4">
-            <span className="text-xs font-mono font-bold text-amber-300 shrink-0 bg-amber-950/80 px-2.5 py-1 rounded border border-amber-400/30">
+          <div className="flex-1 max-w-xl flex items-center gap-2 sm:gap-4">
+            <span className="text-[10px] sm:text-xs font-mono font-bold text-amber-300 shrink-0 bg-amber-950/80 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded border border-amber-400/30">
               {MONTHS[time]} {year}
             </span>
             <input
@@ -761,12 +989,12 @@ export default function Viewer({
               max={11}
               value={time}
               onChange={(e) => setTime(+e.target.value)}
-              className="w-full accent-cyan-400 cursor-pointer h-2 bg-slate-800 rounded-lg"
+              className="w-full accent-cyan-400 cursor-pointer h-1.5 sm:h-2 bg-slate-800 rounded-lg"
             />
           </div>
 
           {/* Year Selectors (2023, 2024, 2025, 2026) */}
-          <div className="flex items-center gap-1 text-xs font-mono font-bold">
+          <div className="hidden sm:flex items-center gap-1 text-xs font-mono font-bold">
             {['2023', '2024', '2025', '2026'].map((y) => (
               <button
                 key={y}

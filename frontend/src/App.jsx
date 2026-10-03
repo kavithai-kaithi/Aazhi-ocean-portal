@@ -581,7 +581,7 @@ export default function App() {
       />
 
       {/* Main Tab Views */}
-      <main className="relative flex-1 w-full overflow-hidden flex flex-col items-center justify-start bg-[#020a18]">
+      <main className="relative flex-1 w-full h-full min-h-0 overflow-hidden flex flex-col items-center justify-start bg-[#020a18]">
         {activeTab === 'home' && (
           <HomePage 
             onNavigate={(tab) => setActiveTab(tab)}

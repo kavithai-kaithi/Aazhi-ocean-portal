@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Html, Float } from '@react-three/drei';
+import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import {
   REGION, VARIABLES, PLATFORMS, PLATFORM_META, sample, bathymetry, isLand, currentVector,
@@ -96,7 +96,7 @@ function useSliceGeometry(variable, depth, time, opacityFade = 1, customColormap
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-    g.computeVertexNormals();
+    if (pos.length > 0) g.computeVertexNormals();
     return g;
   }, [variable, depth, time, opacityFade, customColormap]);
 }
@@ -109,10 +109,19 @@ function SliceMesh({ variable, depth, time, opacity = 0.95, fade = 1, customColo
   useEffect(() => () => geo.dispose(), [geo]);
 
   useFrame((state) => {
-    if (wireRef.current) {
+    if (wireRef.current && wireRef.current.material) {
       wireRef.current.material.opacity = 0.6 + 0.3 * Math.sin(state.clock.elapsedTime * 3);
     }
   });
+
+  const boxWireGeo = useMemo(() => {
+    const box = new THREE.BoxGeometry(SX, 0.05, SZ);
+    const edges = new THREE.EdgesGeometry(box);
+    box.dispose();
+    return edges;
+  }, []);
+
+  useEffect(() => () => boxWireGeo.dispose(), [boxWireGeo]);
 
   return (
     <group>
@@ -123,8 +132,7 @@ function SliceMesh({ variable, depth, time, opacity = 0.95, fade = 1, customColo
       {/* Glowing Neon Perimeter Box for Active Slice */}
       {opacity > 0.8 && (
         <group position={[0, y, 0]}>
-          <lineSegments ref={wireRef}>
-            <edgesGeometry args={[new THREE.BoxGeometry(SX, 0.05, SZ)]} />
+          <lineSegments ref={wireRef} geometry={boxWireGeo}>
             <lineBasicMaterial color="#38bdf8" transparent opacity={0.8} />
           </lineSegments>
         </group>
@@ -171,19 +179,21 @@ function TransectMesh({ variable, lat, time, customColormap = null }) {
 
   useEffect(() => () => geo.dispose(), [geo]);
 
+  const laserGeo = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute([lonToX(REGION.lon0), 0.05, latToZ(lat), lonToX(REGION.lon1), 0.05, latToZ(lat)], 3));
+    return g;
+  }, [lat]);
+
+  useEffect(() => () => laserGeo.dispose(), [laserGeo]);
+
   return (
     <group>
       <mesh geometry={geo} renderOrder={1}>
         <meshBasicMaterial vertexColors side={THREE.DoubleSide} />
       </mesh>
       {/* Transect top neon laser line */}
-      <line>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            args={[new Float32Array([lonToX(REGION.lon0), 0.05, latToZ(lat), lonToX(REGION.lon1), 0.05, latToZ(lat)]), 3]}
-          />
-        </bufferGeometry>
+      <line geometry={laserGeo}>
         <lineBasicMaterial color="#f472b6" linewidth={2} transparent opacity={0.9} />
       </line>
     </group>
@@ -217,6 +227,8 @@ function SeaFloor() {
     g.computeVertexNormals();
     return g;
   }, []);
+
+  useEffect(() => () => geo.dispose(), [geo]);
 
   return (
     <mesh geometry={geo} receiveShadow renderOrder={3}>
@@ -268,6 +280,8 @@ function CurrentArrows({ depth, time }) {
     cone.rotateX(Math.PI / 2);
     return cone;
   }, []);
+
+  useEffect(() => () => geom.dispose(), [geom]);
 
   const vectorGrid = useMemo(() => {
     const items = [];
@@ -349,7 +363,7 @@ function CurrentArrows({ depth, time }) {
   });
 
   return (
-    <instancedMesh ref={ref} args={[geom, undefined, AX * AY]} renderOrder={4}>
+    <instancedMesh ref={ref} geometry={geom} count={AX * AY} renderOrder={4}>
       <meshBasicMaterial transparent opacity={0.95} />
     </instancedMesh>
   );
@@ -357,7 +371,8 @@ function CurrentArrows({ depth, time }) {
 
 /* ------------------------------ Argo Robotic Platforms ------------------------------ */
 function PlatformMarker({ p, selected, onSelect }) {
-  const color = PLATFORM_META[p.type].color;
+  const metaType = PLATFORM_META[p.type] || PLATFORM_META.incois || { label: 'In-Situ Cast', color: '#38bdf8', icon: '⚓' };
+  const color = metaType.color;
   const maxD = p.depths[p.depths.length - 1];
   const x = lonToX(p.lon);
   const z = latToZ(p.lat);
@@ -374,7 +389,7 @@ function PlatformMarker({ p, selected, onSelect }) {
 
   const handleClick = (e) => {
     if (e && e.stopPropagation) e.stopPropagation();
-    onSelect(p.id);
+    if (onSelect) onSelect(p.id);
   };
 
   return (
@@ -439,7 +454,7 @@ function PlatformMarker({ p, selected, onSelect }) {
             }`}
           >
             <div className="font-bold flex items-center gap-1.5 text-[13px]">
-              <span>{PLATFORM_META[p.type].icon}</span>
+              <span>{metaType.icon || '⚓'}</span>
               <span>{p.name || p.id}</span>
             </div>
             <div className="text-[10px] text-slate-300 mt-0.5">
@@ -456,8 +471,12 @@ function PlatformMarker({ p, selected, onSelect }) {
 function BoxFrame({ transectLat }) {
   const edges = useMemo(() => {
     const g = new THREE.BoxGeometry(SX, SY, SZ);
-    return new THREE.EdgesGeometry(g);
+    const ed = new THREE.EdgesGeometry(g);
+    g.dispose();
+    return ed;
   }, []);
+
+  useEffect(() => () => edges.dispose(), [edges]);
 
   const depthMarkers = [0, 200, 500, 1000, 2000];
   const lonMarkers = [60, 80, 100];
@@ -565,15 +584,70 @@ function SceneContent(o) {
   );
 }
 
+class SceneErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("WebGL 3D Ocean Scene Error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center bg-[#020a18] p-6 text-center text-slate-300">
+          <div className="p-4 rounded-2xl bg-rose-950/80 border border-rose-500/30 max-w-md space-y-3 shadow-2xl">
+            <h3 className="text-lg font-bold text-rose-300 font-['Outfit']">3D Viewport Rendering Notice</h3>
+            <p className="text-xs text-slate-300 leading-relaxed font-mono">
+              {this.state.error?.message || 'WebGL context or 3D scene initialization error.'}
+            </p>
+            <button
+              onClick={() => this.setState({ hasError: false, error: null })}
+              className="px-4 py-2 rounded-xl bg-cyan-400 text-slate-950 font-bold text-xs cursor-pointer hover:scale-105 transition shadow-md font-mono"
+            >
+              Retry 3D Scene
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function OceanScene(props) {
+  const [aspect, setAspect] = useState(() => (typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 1.6));
+
+  useEffect(() => {
+    const handleResize = () => {
+      setAspect(window.innerWidth / window.innerHeight);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Responsive camera framing: mobile screens (<1.1 aspect ratio) get wider FOV & position adjustment
+  const isNarrowMobile = aspect < 1.1;
+  const cameraPos = isNarrowMobile ? [20, 16, 28] : [16, 13, 22];
+  const cameraFov = isNarrowMobile ? 52 : 40;
+
   return (
-    <Canvas
-      camera={{ position: [16, 13, 22], fov: 40 }}
-      dpr={[1, 2]}
-      onPointerMissed={() => props.onSelect(null)}
-      gl={{ antialias: true, alpha: false }}
-    >
-      <SceneContent {...props} />
-    </Canvas>
+    <SceneErrorBoundary>
+      <Canvas
+        camera={{ position: cameraPos, fov: cameraFov }}
+        dpr={[1, 2]}
+        onPointerMissed={() => props.onSelect && props.onSelect(null)}
+        gl={{ antialias: true, alpha: false, preserveDrawingBuffer: true }}
+        style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, touchAction: 'none' }}
+      >
+        <SceneContent {...props} />
+      </Canvas>
+    </SceneErrorBoundary>
   );
 }

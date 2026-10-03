@@ -10,6 +10,9 @@ export default defineConfig({
   ],
   server: {
     port: 3000,
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate'
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
@@ -22,3 +25,4 @@ export default defineConfig({
     }
   }
 });
+
