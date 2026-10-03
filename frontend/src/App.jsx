@@ -489,8 +489,12 @@ export default function App() {
               <div className="flex items-center gap-2 leading-none">
                 <span className="text-base sm:text-lg font-black tracking-widest text-white font-['Outfit']">AAZHI</span>
                 <span className="text-[9px] sm:text-[10px] font-extrabold tracking-[0.15em] text-cyan-300 bg-cyan-950/90 border border-cyan-400/35 px-2 py-0.5 rounded-full uppercase leading-none shadow-sm hidden md:inline-block">
-                  OCEAN OBSERVATION PORTAL
+                  OCEAN PORTAL
                 </span>
+                <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-[10px] font-mono font-bold text-emerald-300 shadow-sm ml-1">
+                  <span className="badge-live-dot" />
+                  <span>64 FLOATS ACTIVE</span>
+                </div>
               </div>
               <div className="text-[10px] sm:text-[11px] text-slate-400 mt-1 font-mono tracking-tight leading-none hidden lg:block">
                 Indian Ocean Hydrodynamics & Argo Float In-Situ Network
