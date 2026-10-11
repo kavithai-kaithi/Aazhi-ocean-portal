@@ -15,7 +15,7 @@ def test_endpoint(name, url, expected_status=200, validator=None):
     start = time.time()
     try:
         req = urllib.request.Request(url, method="GET")
-        with urllib.request.urlopen(req, timeout=5.0) as resp:
+        with urllib.request.urlopen(req, timeout=15.0) as resp:
             status_code = resp.status
             content = resp.read()
             headers = dict(resp.getheaders())

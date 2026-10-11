@@ -74,8 +74,19 @@ def calculate_profile_statistics(model_vals, observed_vals):
     bias = float(np.mean(diff))
     rmse = float(np.sqrt(np.mean(diff ** 2)))
     
+    r = None
+    if n_valid > 1:
+        std_m = float(np.std(m[valid_mask]))
+        std_o = float(np.std(o[valid_mask]))
+        if std_m > 1e-7 and std_o > 1e-7:
+            corr_mat = np.corrcoef(m[valid_mask], o[valid_mask])
+            r_val = float(corr_mat[0, 1])
+            if not np.isnan(r_val):
+                r = round(r_val, 4)
+    
     return {
         "bias": round(bias, 3),
         "rmse": round(rmse, 3),
+        "r": r,
         "n_points": n_valid
     }

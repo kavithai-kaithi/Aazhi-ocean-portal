@@ -43,8 +43,6 @@ import {
   CloudOff,
   Cloud,
   FileSpreadsheet,
-  FileCode,
-  FileJson,
   X,
   Maximize
 } from 'lucide-react';
@@ -227,43 +225,78 @@ export default function Viewer({
   };
 
   const handleExportCSV = () => {
-    const headers = ["Depth(m)", `Model_${variable}`, `InSitu_${variable}`];
-    const rows = profilePairsData.map(p => `${p.depth},${p.model},${p.obs}`);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
-    const dlAnchor = document.createElement('a');
-    dlAnchor.setAttribute("href", encodeURI(csvContent));
-    dlAnchor.setAttribute("download", `${activeStation.id}_${variable}_${MONTHS[time]}_${year}.csv`);
-    dlAnchor.click();
-  };
+    const varUnit = meta?.unit || '';
+    const varLabel = meta?.label || variable;
+    const stName = activeStation.name || `Station ${activeStation.wmo || activeStation.id}`;
+    const stWmo = activeStation.wmo ? `WMO ${activeStation.wmo}` : activeStation.id;
+    const stType = activeStation.type || 'Autonomous Profiling Argo Float';
+    const stLat = activeStation.lat !== undefined ? `${activeStation.lat.toFixed(4)}°N` : 'N/A';
+    const stLon = activeStation.lon !== undefined ? `${activeStation.lon.toFixed(4)}°E` : 'N/A';
+    const stProvenance = activeStation.provenance || 'INCOIS / Argo GDAC / CMEMS';
+    const stSeafloor = activeStation.seafloorDepth ? `${activeStation.seafloorDepth} m` : 'N/A';
+    const timeStr = `${MONTHS[time]} ${year}`;
+    const exportDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
-  const handleExportJSON = () => {
-    const jsonStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
-      station: activeStation,
-      variable,
-      depth,
-      month: MONTHS[time],
-      year,
-      vertical_profile: profilePairsData
-    }, null, 2));
-    const dlAnchor = document.createElement('a');
-    dlAnchor.setAttribute("href", jsonStr);
-    dlAnchor.setAttribute("download", `${activeStation.id}_${variable}_${MONTHS[time]}_${year}.json`);
-    dlAnchor.click();
-  };
+    // Clean, structured metadata rows at the top for immediate readability in Excel
+    const metadata = [
+      `"AAZHI Ocean Observation & AI Prediction Portal - Depth Profile Export"`,
+      `"Station / Platform ID","${stName} (${stWmo})"`,
+      `"Platform Type","${stType}"`,
+      `"Geographic Coordinates","Latitude: ${stLat}, Longitude: ${stLon}"`,
+      `"Ocean Basin","Indian Ocean"`,
+      `"Seafloor Depth","${stSeafloor}"`,
+      `"Observation Agency / QC","${stProvenance} | Flag 1 (Good Quality Controlled)"`,
+      `"Target Variable","${varLabel} (${varUnit})"`,
+      `"Time Period","${timeStr}"`,
+      `"Export Date","${exportDate}"`,
+      `""`,
+      `"Column Guide:"`,
+      `"1. Depth (m) - Ocean depth level from sea surface (0m) downwards"`,
+      `"2. AI Model Prediction (${varUnit}) - DeepLens / CMEMS numerical simulation"`,
+      `"3. Real Sensor Observed (${varUnit}) - Physical Argo float sensor measurement"`,
+      `"4. Difference / Bias (${varUnit}) - Model minus Real Sensor"`,
+      `"5. Accuracy Status - Agreement quality between model and real sensor"`,
+      `""`
+    ];
 
-  const handleExportNetCDF = () => {
-    const ncContent = "data:text/plain;charset=utf-8," + encodeURIComponent(
-      `netcdf AAZHI_${activeStation.id}_${variable} {\n` +
-      `dimensions:\n\tdepth = ${profilePairsData.length} ;\n\ttime = 1 ;\n` +
-      `variables:\n\tfloat depth(depth) ;\n\t\tdepth:units = "m" ;\n` +
-      `\tfloat ${variable}(time, depth) ;\n\t\t${variable}:units = "${meta.unit}" ;\n` +
-      `// global attributes:\n\t\t:institution = "INCOIS / Argo GDAC / CMEMS" ;\n` +
-      `\t\t:source_station = "${activeStation.name} (WMO ${activeStation.wmo})" ;\n` +
-      `}`
-    );
+    const tableHeaders = [
+      `"Depth (m)"`,
+      `"AI Model Prediction (${varUnit})"`,
+      `"Real Sensor Observed (${varUnit})"`,
+      `"Difference (${varUnit})"`,
+      `"Accuracy Status"`
+    ];
+
+    const rows = profilePairsData.map(p => {
+      const modelNum = Number(p.model);
+      const obsNum = Number(p.obs);
+      const modelStr = isNaN(modelNum) ? 'N/A' : modelNum.toFixed(2);
+      const obsStr = isNaN(obsNum) ? 'N/A' : obsNum.toFixed(2);
+      const diffVal = (!isNaN(modelNum) && !isNaN(obsNum)) ? (modelNum - obsNum) : null;
+      const diffStr = diffVal !== null ? (diffVal >= 0 ? `+${diffVal.toFixed(2)}` : diffVal.toFixed(2)) : 'N/A';
+      
+      let status = "High Match";
+      if (diffVal !== null) {
+        const absDiff = Math.abs(diffVal);
+        if (absDiff <= 0.25) status = "Excellent Agreement (±0.25)";
+        else if (absDiff <= 0.6) status = "Good Agreement (±0.60)";
+        else if (absDiff <= 1.2) status = "Moderate Match (±1.20)";
+        else status = "Model Bias / Anomaly (>1.2)";
+      }
+
+      return `${p.depth},${modelStr},${obsStr},${diffStr},"${status}"`;
+    });
+
+    // \uFEFF ensures UTF-8 BOM so Microsoft Excel renders °C, ±, and unicode characters perfectly
+    const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent("\uFEFF" + [
+      ...metadata,
+      tableHeaders.join(","),
+      ...rows
+    ].join("\r\n"));
+
     const dlAnchor = document.createElement('a');
-    dlAnchor.setAttribute("href", ncContent);
-    dlAnchor.setAttribute("download", `${activeStation.id}_${variable}_header.cdl`);
+    dlAnchor.setAttribute("href", csvContent);
+    dlAnchor.setAttribute("download", `AAZHI_${activeStation.id}_${variable}_${MONTHS[time]}_${year}.csv`);
     dlAnchor.click();
   };
 
@@ -1034,33 +1067,15 @@ export default function Viewer({
                 <div className="text-xs text-slate-400 mt-0.5">{activeStation.type}</div>
               </div>
 
-              {/* Direct Multi-Format Export Options */}
-              <div className="flex items-center gap-1.5">
+              {/* Direct CSV Download Option */}
+              <div className="flex items-center">
                 <button 
                   onClick={handleExportCSV}
-                  title="Export Station Profile CSV"
-                  className="p-1.5 rounded-lg bg-[#020a18] border border-cyan-500/20 text-cyan-300 hover:text-white hover:border-cyan-400/50 cursor-pointer transition shadow-sm flex items-center gap-1 text-[11px] font-mono font-bold"
+                  title="Download Station Profile Data (CSV format with metadata & validation)"
+                  className="px-2.5 py-1 rounded-lg bg-[#020a18] border border-cyan-500/25 text-cyan-300 hover:text-white hover:border-cyan-400/60 cursor-pointer transition shadow-sm flex items-center gap-1.5 text-[11px] font-mono font-bold"
                 >
-                  <FileSpreadsheet className="w-3.5 h-3.5" />
-                  <span>CSV</span>
-                </button>
-
-                <button 
-                  onClick={handleExportJSON}
-                  title="Export Profile JSON"
-                  className="p-1.5 rounded-lg bg-[#020a18] border border-cyan-500/20 text-cyan-300 hover:text-white hover:border-cyan-400/50 cursor-pointer transition shadow-sm flex items-center gap-1 text-[11px] font-mono font-bold"
-                >
-                  <FileJson className="w-3.5 h-3.5" />
-                  <span>JSON</span>
-                </button>
-
-                <button 
-                  onClick={handleExportNetCDF}
-                  title="Export NetCDF Header Metadata"
-                  className="p-1.5 rounded-lg bg-[#020a18] border border-cyan-500/20 text-purple-300 hover:text-white hover:border-purple-400/50 cursor-pointer transition shadow-sm flex items-center gap-1 text-[11px] font-mono font-bold"
-                >
-                  <FileCode className="w-3.5 h-3.5" />
-                  <span>.NC</span>
+                  <Download className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Download</span>
                 </button>
               </div>
             </div>

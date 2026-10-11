@@ -48,6 +48,12 @@ async def lifespan(app: FastAPI):
     logger.info(f"Base Directory: {BASE_DIR}")
     logger.info(f"Tiles Directory: {TILES_DIR}")
     logger.info(f"Frontend Dist Directory: {FRONTEND_DIST_DIR} (Exists: {FRONTEND_DIST_DIR.exists()})")
+    try:
+        from backend.utils.dataset import dataset_engine
+        dataset_engine.load()
+        logger.info("AAZHI Dataset Engine loaded and warmed up into memory")
+    except Exception as e:
+        logger.warning(f"Dataset engine warmup notice: {e}")
     logger.info("=" * 60)
     yield
     logger.info("AAZHI Oceanographic Server Shutting down...")
@@ -85,6 +91,9 @@ app.mount("/static-tiles", StaticFiles(directory=str(TILES_DIR), check_dir=False
 
 @app.get("/")
 async def root():
+    index_path = FRONTEND_DIST_DIR / "index.html"
+    if index_path.exists():
+        return FileResponse(index_path)
     return {
         "message": "AAZHI Ocean Observation & Validation Platform API Server is Live",
         "documentation": "/docs",
