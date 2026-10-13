@@ -32,6 +32,7 @@ import {
   Cloud,
   Palette,
   FileSpreadsheet,
+  Download,
   Zap,
   Power,
   Layers
@@ -389,14 +390,23 @@ export default function App() {
   const getInitialParams = () => {
     const params = new URLSearchParams(window.location.search);
     let initialTab = 'home';
-    if (params.get('tab') && TABS.some(t => t.id === params.get('tab'))) {
+    
+    // Check path routing first (e.g. /viewer or /validation)
+    const cleanPath = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+    if (cleanPath && TABS.some(t => t.id === cleanPath)) {
+      initialTab = cleanPath;
+    } else if (params.get('tab') && TABS.some(t => t.id === params.get('tab'))) {
       initialTab = params.get('tab');
     }
+
+    const rawDepth = params.get('depth');
+    const parsedDepth = rawDepth !== null ? parseInt(rawDepth, 10) : 0;
+
     return {
       tab: initialTab,
       var: params.get('var') || 'temperature',
       month: params.get('month') || '2023-06',
-      depth: params.get('depth') ? parseInt(params.get('depth'), 10) : 0,
+      depth: isNaN(parsedDepth) ? 0 : parsedDepth,
     };
   };
 
@@ -424,7 +434,7 @@ export default function App() {
     const params = new URLSearchParams();
     params.set('tab', activeTab);
     params.set('var', variable);
-    params.set('depth', depth.toString());
+    params.set('depth', (depth ?? 0).toString());
     params.set('month', month);
     const newUrl = `${window.location.pathname}?${params.toString()}`;
     window.history.replaceState({}, '', newUrl);

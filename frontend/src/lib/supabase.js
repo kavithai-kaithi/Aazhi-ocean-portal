@@ -1,8 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Retrieve Supabase credentials from Vite environment variables
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://uqvumgpyzoefplmkjszq.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxdnVtZ3B5em9lZnBsbWtqc3pxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1MDI2MDUsImV4cCI6MjEwNjA3ODYwNX0.5qpB3lCsa1_yc34H1ucELszbn2vfGyDiShF8-stx6QY';
 
 // Validate credentials
 export const isSupabaseConfigured = Boolean(
